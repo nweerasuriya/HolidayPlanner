@@ -10,7 +10,7 @@ import os
 
 def create_folder(directory):
     """
-    create a given folder if fit does not exit
+    Create a given folder if fit does not exit
     """
     try:
         if not os.path.exists(directory):
@@ -18,3 +18,18 @@ def create_folder(directory):
     except OSError:
         print('Error: Creating directory. ' + directory)
     return directory
+
+
+def is_number(s):
+    """
+    Checks if a variable is float or complex
+    """
+    try:
+        float(s)  # for int, long and float
+    except ValueError:
+        try:
+            complex(s)  # for complex
+        except ValueError:
+            return False
+
+    return True
