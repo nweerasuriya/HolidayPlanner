@@ -9,7 +9,6 @@ __author__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
 
 
-import os
 import numpy as np
 import pandas as pd
 from src.helpers.time_tracker import track_time
