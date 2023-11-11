@@ -5,12 +5,13 @@ Contains functions to ingest data from a file and format it
 """
 
 __date__ = "2023-11-10"
-__author__ = "NedeeshaWeerasuriya"
+__authors__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
 
 
 import numpy as np
 import pandas as pd
+
 from src.helpers.time_tracker import track_time
 from src.helpers.utils import is_number
 
