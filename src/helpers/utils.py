@@ -8,7 +8,8 @@ __author__ = "NedeeshaWeerasuriya"
 
 import os
 
-def create_folder(directory):
+
+def create_folder(directory: str) -> str:
     """
     Create a given folder if fit does not exit
     """
@@ -16,11 +17,11 @@ def create_folder(directory):
         if not os.path.exists(directory):
             os.makedirs(directory)
     except OSError:
-        print('Error: Creating directory. ' + directory)
+        print("Error: Creating directory. " + directory)
     return directory
 
 
-def is_number(s):
+def is_number(s) -> bool:
     """
     Checks if a variable is float or complex
     """
