@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from src.methods.data_ingestion import call_api
+from src.helpers.utils import check_substr_in_dict
 
 # %% --------------------------------------------------------------------------
 # Main Script
@@ -71,14 +72,14 @@ def format_to_df(data: dict) -> pd.DataFrame:
         axis=1,
     )
 
-    # expand raw column into multiple columns
-    df = pd.concat([df.drop(["raw"], axis=1), df["raw"].apply(pd.Series)], axis=1)
+    # get website from dictionary in raw column if key containing sub string 'website' exists
+    df['website'] = df['raw'].apply(lambda x: check_substr_in_dict(x, 'website'))
 
     # drop duplicate columns
     df = df.loc[:, ~df.columns.duplicated()]
 
-    # if name is not available, use the address line 1
-    #df["name"] = df["name"].fillna(df["address_line1"])
+    # if name is not available, drop the row
+    df = df.dropna(subset=["name"])
 
     # drop rows with identical name and postcode
     df = df.drop_duplicates(subset=["name", "postcode"])
@@ -105,7 +106,7 @@ def get_unique_words(cat_list) -> list:
     return unique_categories
 
 
-def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> pd.DataFrame:
+def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
     """
     Pipeline for the Geoapify API
     """
@@ -131,4 +132,4 @@ def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> pd.DataF
     df = df.drop(["categories"], axis=1).join(
         pd.Series(category_dict, name="category_keywords"), on="name"
     )
-    return df
+    return df, data
