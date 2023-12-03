@@ -58,10 +58,12 @@ def filter_data_ranges(data: pd.DataFrame, data_range: tuple) -> pd.DataFrame:
 @track_time
 def call_api(url: str, headers: dict = None, params: dict = None, request: Request = Request.GET):
     try:
-        if request == Request.POST:
+        if request == Request.GET:
+            response = requests.get(url, headers=headers, params=params)
+        elif request == Request.POST:
             response = requests.post(url, headers=headers, data=params)
         else:
-            response = requests.get(url, headers=headers, params=params)
+            raise requests.exceptions.RequestException("Invalid request method")
 
         response.raise_for_status()  # Raise an exception if the request was unsuccessful
         return response.json()  # Return the response data as JSON
