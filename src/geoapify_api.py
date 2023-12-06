@@ -26,7 +26,7 @@ def default_parameters() -> dict:
     """
     request_params = {
         "apiKey": "493bbfea1f124b27906cf052aa330680",
-        "categories": "entertainment,tourism",
+        "categories": "entertainment,tourism, leisure",
         "limit": "500",
     }
     return request_params
@@ -51,7 +51,7 @@ def create_url(url: str, request_params: dict, filters: dict) -> str:
 
 def format_to_df(data: dict) -> pd.DataFrame:
     """
-    Format the data to a pandas dataframe
+    Format and clean the data to a pandas dataframe
     """
     feature_list = []
     for i in range(len(data["features"])):
@@ -81,8 +81,12 @@ def format_to_df(data: dict) -> pd.DataFrame:
     # if name is not available, drop the row
     df = df.dropna(subset=["name"])
 
-    # drop rows with identical name and postcode
+    # drop rows with identical names or postcodes
     df = df.drop_duplicates(subset=["name", "postcode"])
+    # drop unnecessary columns
+    df = df.drop(["raw","sourcename","details","attribution"], axis=1)
+    # drop columns with nan rate over 90%
+    df = df.dropna(thresh=len(df) * 0.1, axis=1)
     return df
 
 
