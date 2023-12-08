@@ -73,7 +73,7 @@ def format_to_df(data: dict) -> pd.DataFrame:
     )
 
     # get website from dictionary in raw column if key containing sub string 'website' exists
-    df['website'] = df['raw'].apply(lambda x: check_substr_in_dict(x, 'website'))
+    df["website"] = df["raw"].apply(lambda x: check_substr_in_dict(x, "website"))
 
     # drop duplicate columns
     df = df.loc[:, ~df.columns.duplicated()]
@@ -84,7 +84,7 @@ def format_to_df(data: dict) -> pd.DataFrame:
     # drop rows with identical names or postcodes
     df = df.drop_duplicates(subset=["name", "postcode"])
     # drop unnecessary columns
-    df = df.drop(["raw","sourcename","details","attribution"], axis=1)
+    df = df.drop(["raw", "url", "sourcename", "details", "attribution"], axis=1)
     # drop columns with nan rate over 90%
     df = df.dropna(thresh=len(df) * 0.1, axis=1)
     return df
@@ -108,6 +108,76 @@ def get_unique_words(cat_list) -> list:
     unique_categories = [item for sublist in unique_categories for item in sublist]
     unique_categories = list(set(unique_categories))
     return unique_categories
+
+
+# TODO: optimise this function
+def add_weather_tags(
+    categories: pd.Series,
+    outdoor_tags: list = None,
+    indoor_tags: list = None,
+    both_tags: list = None,
+) -> pd.Series:
+    """
+    Add weather tags based on the category key words in a list
+    Produce a score between 1 and 5 based on the number of outdoor, indoor and both tags
+    5 indicates places should only be visited in good weather
+    """
+    if outdoor_tags == None:
+        outdoor = [
+            "park",
+            "beach",
+            "garden",
+            "lake",
+            "river",
+            "mountain",
+            "viewpoint",
+            "bridge",
+            "square",
+            "archeological_site",
+            "monument",
+        ]
+    if indoor_tags == None:
+        indoor = [
+            "building",
+            "cinema",
+            "theatre",
+            "museum",
+            "gallery",
+            "aquarium",
+            "zoo",
+            "library",
+        ]
+    if both_tags == None:
+        both = ["castle", "ruins", "ruines", "university", "sports_centre"]
+
+    # for each row, count number of each tag and assign a score
+    # outdoor tags are worth 5 points, both tags are worth 2 points, indoor tags are worth 0 point
+    weather_tags = []
+    for row in categories:
+        outdoor_count = 0
+        indoor_count = 0
+        both_count = 0
+        if isinstance(row, list):
+            for category in row:
+                if category in outdoor:
+                    outdoor_count += 1
+                elif category in indoor:
+                    indoor_count += 1
+                elif category in both:
+                    both_count += 1
+        if outdoor_count + both_count + indoor_count == 0:
+            weather_tags.append(0)
+        else:
+            # Scale the score between 1 and 5
+            weather_tags.append(
+                np.clip(
+                    (outdoor_count * 5 + both_count * 2)
+                    / (outdoor_count + both_count + indoor_count),
+                    1,
+                    5,
+                )
+            )
+    return pd.Series(weather_tags)
 
 
 def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
@@ -136,4 +206,8 @@ def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
     df = df.drop(["categories"], axis=1).join(
         pd.Series(category_dict, name="category_keywords"), on="name"
     )
+
+    # add weather tags
+    df["weather_tags"] = add_weather_tags(df["category_keywords"])
+
     return df, data
