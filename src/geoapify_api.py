@@ -32,6 +32,7 @@ def default_parameters() -> dict:
     }
     return request_params
 
+
 @track_time
 def create_url(url: str, request_params: dict, filters: dict) -> str:
     """
@@ -48,6 +49,7 @@ def create_url(url: str, request_params: dict, filters: dict) -> str:
     # remove the last '&' from the url
     url = url[:-1]
     return url
+
 
 @track_time
 def format_to_df(data: dict) -> pd.DataFrame:
@@ -90,6 +92,7 @@ def format_to_df(data: dict) -> pd.DataFrame:
     df = df.dropna(thresh=len(df) * 0.1, axis=1)
     return df
 
+
 @track_time
 def get_unique_words(cat_list) -> list:
     """
@@ -113,11 +116,11 @@ def get_unique_words(cat_list) -> list:
 
 @track_time
 def add_weather_tags(
-    categories: pd.Series,
+    categories: list,
     outdoor_tags: list = None,
     indoor_tags: list = None,
     both_tags: list = None,
-) -> pd.Series:
+) -> int:
     """
     Add weather tags based on the category key words in a list
     Produce a score between 1 and 5 based on the number of outdoor, indoor and both tags
@@ -134,7 +137,7 @@ def add_weather_tags(
             "viewpoint",
             "bridge",
             "square",
-            "archeological_site",
+            "archaeological_site",
             "monument",
         ]
     if indoor_tags == None:
@@ -151,34 +154,34 @@ def add_weather_tags(
     if both_tags == None:
         both = ["castle", "ruins", "ruines", "university", "sports_centre"]
 
-    # for each row, count number of each tag and assign a score
-    # outdoor tags are worth 5 points, both tags are worth 2 points, indoor tags are worth 0 point
-    weather_tags = []
-    for row in categories:
-        outdoor_count = 0
-        indoor_count = 0
-        both_count = 0
-        if isinstance(row, list):
-            for category in row:
-                if category in outdoor:
-                    outdoor_count += 1
-                elif category in indoor:
-                    indoor_count += 1
-                elif category in both:
-                    both_count += 1
-        if outdoor_count + both_count + indoor_count == 0:
-            weather_tags.append(0)
-        else:
-            # Scale the score between 1 and 5
-            weather_tags.append(
-                np.clip(
-                    (outdoor_count * 5 + both_count * 2)
-                    / (outdoor_count + both_count + indoor_count),
-                    1,
-                    5,
-                )
+    # outdoor tags are worth 5 points, both tags are worth 2 points, indoor tags are worth 0 points
+    outdoor_count = 0
+    indoor_count = 0
+    both_count = 0
+    for category in categories:
+        if category in outdoor:
+            outdoor_count += 1
+        elif category in indoor:
+            indoor_count += 1
+        elif category in both:
+            both_count += 1
+
+    # if no tags are found, return 0
+    if outdoor_count + both_count + indoor_count == 0:
+        weather_tag = 0
+    # calculate the weather tag
+    else:
+        # Scale the score between 1 and 5
+        weather_tag = int(
+            np.clip(
+                (outdoor_count * 5 + both_count * 2)
+                / (outdoor_count + both_count + indoor_count),
+                1,
+                5,
             )
-    return pd.Series(weather_tags)
+        )
+    return weather_tag
+
 
 @track_time
 def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
@@ -198,17 +201,16 @@ def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
     # format data to df
     df = format_to_df(data)
 
-    # get unique categories
+    # get unique categories and add weather tags
     category_dict = {}
+    weather_tags = {}
     for _, row in df.iterrows():
         category_dict[row["name"]] = get_unique_words(row["categories"])
-
+        weather_tags[row["name"]] = add_weather_tags(category_dict[row["name"]])
+        
     # join with df on name column
-    df = df.drop(["categories"], axis=1).join(
-        pd.Series(category_dict, name="category_keywords"), on="name"
-    )
-
+    df = df.drop(["categories"], axis=1).map(category_dict)
     # add weather tags
-    df["weather_tags"] = add_weather_tags(df["category_keywords"])
+    df["weather_tags"] = df["name"].map(weather_tags)
 
     return df, data
