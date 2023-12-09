@@ -16,6 +16,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from src.methods.data_ingestion import call_api
 from src.helpers.utils import check_substr_in_dict
+from src.helpers.time_tracker import track_time
 
 # %% --------------------------------------------------------------------------
 # Main Script
@@ -31,7 +32,7 @@ def default_parameters() -> dict:
     }
     return request_params
 
-
+@track_time
 def create_url(url: str, request_params: dict, filters: dict) -> str:
     """
     Create URL for the Geoapify API
@@ -48,7 +49,7 @@ def create_url(url: str, request_params: dict, filters: dict) -> str:
     url = url[:-1]
     return url
 
-
+@track_time
 def format_to_df(data: dict) -> pd.DataFrame:
     """
     Format and clean the data to a pandas dataframe
@@ -89,7 +90,7 @@ def format_to_df(data: dict) -> pd.DataFrame:
     df = df.dropna(thresh=len(df) * 0.1, axis=1)
     return df
 
-
+@track_time
 def get_unique_words(cat_list) -> list:
     """
     Get unique words from the category list
@@ -110,7 +111,7 @@ def get_unique_words(cat_list) -> list:
     return unique_categories
 
 
-# TODO: optimise this function
+@track_time
 def add_weather_tags(
     categories: pd.Series,
     outdoor_tags: list = None,
@@ -179,7 +180,7 @@ def add_weather_tags(
             )
     return pd.Series(weather_tags)
 
-
+@track_time
 def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
     """
     Pipeline for the Geoapify API
