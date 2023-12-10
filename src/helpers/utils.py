@@ -1,12 +1,13 @@
 """
 Utilities for the project
-
 """
 
 __date__ = "2023-11-10"
 __author__ = "NedeeshaWeerasuriya"
 
 import os
+
+import numpy as np
 
 
 def create_folder(directory: str) -> str:
@@ -34,3 +35,13 @@ def is_number(s) -> bool:
             return False
 
     return True
+
+
+def check_substr_in_dict(x: dict, substr: str) -> str:
+    """
+    Check if the substring exists in the dictionary keys
+    """
+    for key in x.keys():
+        if substr in key:
+            return x[key]
+    return np.nan
