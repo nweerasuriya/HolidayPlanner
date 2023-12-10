@@ -207,9 +207,11 @@ def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
     for _, row in df.iterrows():
         category_dict[row["name"]] = get_unique_words(row["categories"])
         weather_tags[row["name"]] = add_weather_tags(category_dict[row["name"]])
-        
-    # join with df on name column
-    df = df.drop(["categories"], axis=1).map(category_dict)
+ 
+    # add categories and drop original column
+    df = df.drop(["categories"], axis=1).join(
+        pd.Series(category_dict, name="category_keywords"), on="name"
+    )
     # add weather tags
     df["weather_tags"] = df["name"].map(weather_tags)
 
