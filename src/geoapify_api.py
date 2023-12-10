@@ -152,7 +152,7 @@ def add_weather_tags(
             "library",
         ]
     if both_tags == None:
-        both = ["castle", "ruins", "ruines", "university", "sports_centre"]
+        both = ["castle", "ruins", "ruines", "university"]
 
     # outdoor tags are worth 5 points, both tags are worth 2 points, indoor tags are worth 0 points
     outdoor_count = 0
