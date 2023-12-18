@@ -1,8 +1,11 @@
 {
     "amadeus_api": {
         "auth": {
-            "client_id": "XXEyhkzG1cZEPQcYfSRNHnv3l85GZhx3",
-            "client_secret": "al3IakaRHKTjKW4d"
+            "dev": {
+                "url": "https://test.api.amadeus.com/v1/security/oauth2/token",
+                "client_id": "XXEyhkzG1cZEPQcYfSRNHnv3l85GZhx3",
+                "client_secret": "al3IakaRHKTjKW4d"
+            }
         }
     }
 }
