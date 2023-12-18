@@ -12,14 +12,11 @@ __version__ = "0.1"
 # Import Modules
 # -----------------------------------------------------------------------------
 import sys
+from pathlib import Path
 sys.path.append('../')
 
 import json
-from enum import Enum
 from src.methods.data_ingestion import call_api, Request
-
-# Enums
-Env = Enum('Env', ['DEV','PROD'])
 
 
 # %% --------------------------------------------------------------------------
@@ -35,13 +32,8 @@ def default_parameters() -> dict:
 
     return request_params
 
-def get_auth_token(env: Env = Env.DEV) -> str:
-    env_str = 'prod' if env == Env.PROD else 'dev'
-
-    with open("config.json","r") as config_file:
-        config = json.load(config_file)['amadeus_api']['auth'][env_str]
-
-    url = config['url']
+def get_auth_token(config: dict) -> str:
+    url = config['auth_url']
 
     headers = {
         "Content-Type": "application/x-www-form-urlencoded"
@@ -57,12 +49,20 @@ def get_auth_token(env: Env = Env.DEV) -> str:
     
     return res['access_token']
 
-def amadeus_pipeline(url: str, request_params: dict, env: Env = Env.DEV):
+def amadeus_pipeline(request_params: dict, isProd: bool = False):
     """
-    Pipeline for the Amadeus API
+    Pipeline for the Amadeus API - Points of Interest
     """
+    env_str = 'prod' if isProd else 'dev'
 
-    auth_token = get_auth_token(env)
+    config_path = f"{Path(__file__).resolve().parent}\config.json"
+
+    with open(config_path,"r") as config_file:
+        config = json.load(config_file)['amadeus_api'][env_str]
+
+    auth_token = get_auth_token(config=config)
+
+    url = config['poi_url']
 
     headers = {
         "Authorization": f"Bearer {auth_token}",
