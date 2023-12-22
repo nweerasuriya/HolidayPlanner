@@ -75,6 +75,10 @@ def format_to_df(data: dict) -> pd.DataFrame:
         axis=1,
     )
 
+    # extract opening hours from dictionary in raw column if 'opening_hours' exists
+    df["opening_hours"] = df["raw"].apply(
+        lambda x: check_substr_in_dict(x, "opening_hours")
+    )
     # get website from dictionary in raw column if key containing sub string 'website' exists
     df["website"] = df["raw"].apply(lambda x: check_substr_in_dict(x, "website"))
 
@@ -88,9 +92,16 @@ def format_to_df(data: dict) -> pd.DataFrame:
     df = df.drop_duplicates(subset=["name", "postcode"])
     # drop unnecessary columns
     df = df.drop(["raw", "url", "sourcename", "details", "attribution"], axis=1)
+
     # drop columns with nan rate over 90%
-    df = df.dropna(thresh=len(df) * 0.1, axis=1)
-    return df
+    df_filtered = df.dropna(thresh=len(df) * 0.1, axis=1)
+
+    exclude_list = ["opening_hours", "website"]
+    for col in exclude_list:
+        if col in df.columns and col not in df_filtered.columns:
+            df_filtered[col] = df[col]
+
+    return df_filtered
 
 
 @track_time
@@ -168,7 +179,7 @@ def add_weather_tags(
 
     # if no tags are found, return 0
     if outdoor_count + both_count + indoor_count == 0:
-        weather_tag = 0
+        weather_tag = 3
     # calculate the weather tag
     else:
         # Scale the score between 1 and 5
@@ -207,7 +218,7 @@ def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
     for _, row in df.iterrows():
         category_dict[row["name"]] = get_unique_words(row["categories"])
         weather_tags[row["name"]] = add_weather_tags(category_dict[row["name"]])
- 
+
     # add categories and drop original column
     df = df.drop(["categories"], axis=1).join(
         pd.Series(category_dict, name="category_keywords"), on="name"
