@@ -55,7 +55,7 @@ def amadeus_pipeline(request_params: dict, isProd: bool = False):
     """
     env_str = 'prod' if isProd else 'dev'
 
-    config_path = f"{Path(__file__).resolve().parent}\config.json"
+    config_path = f"{Path(__file__).resolve().parent}/config.json"
 
     with open(config_path,"r") as config_file:
         config = json.load(config_file)['amadeus_api'][env_str]
