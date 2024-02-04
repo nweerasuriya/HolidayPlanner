@@ -11,6 +11,9 @@ import geopy.distance
 import numpy as np
 from pyproj import Proj, Transformer
 
+# Import helper functions
+from src.helpers.time_tracker import track_time
+
 
 def create_folder(directory: str) -> str:
     """
@@ -49,6 +52,7 @@ def check_substr_in_dict(x: dict, substr: str) -> str:
     return np.nan
 
 
+@track_time
 def relative_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Calculate the relative distance between two points on the Earth's surface using geopy.
@@ -59,6 +63,7 @@ def relative_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> flo
     return geopy.distance.distance(coords_1, coords_2).km
 
 
+@track_time
 def convert_easting_northing_to_long_lat(easting: int, northing: int) -> tuple:
     """
     Convert easting and northing coordinates to longitude and latitude
