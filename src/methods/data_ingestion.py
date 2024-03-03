@@ -8,23 +8,14 @@ __date__ = "2023-11-10"
 __authors__ = "NedeeshaWeerasuriya, Sang Nguyen"
 __version__ = "0.1"
 
-<<<<<<< HEAD
-"""
-Import Modules
-"""
-=======
 # Import required libraries
->>>>>>> b1efb45c14fb64277eda07bd70ff62a0ad0a775b
 import numpy as np
 import pandas as pd
 import requests
 from pyowm import OWM
 
-<<<<<<< HEAD
 from enum import Enum
-=======
 # Import helper functions
->>>>>>> b1efb45c14fb64277eda07bd70ff62a0ad0a775b
 from src.helpers.time_tracker import track_time
 from src.helpers.utils import is_number
 
@@ -68,7 +59,6 @@ def filter_data_ranges(data: pd.DataFrame, data_range: tuple) -> pd.DataFrame:
 
 
 @track_time
-<<<<<<< HEAD
 def call_api(url: str, headers: dict = None, params: dict = None, request: Request = Request.GET):
     """
     Performs a REST API call and returns the response
@@ -83,11 +73,6 @@ def call_api(url: str, headers: dict = None, params: dict = None, request: Reque
         A dictionary of parameters in the request body
     request: Request
         The REST method used in the API call, must be a valid item in the Request Enum
-=======
-def call_api(url: str, headers: dict = None, params: dict = None) -> dict:
-    """
-    Call an API and return the response as JSON
->>>>>>> b1efb45c14fb64277eda07bd70ff62a0ad0a775b
     """
     try:
         if request == Request.GET:
@@ -101,9 +86,6 @@ def call_api(url: str, headers: dict = None, params: dict = None) -> dict:
         return response.json()  # Return the response data as JSON
     except requests.exceptions.RequestException as e:
         print(f"Error calling API: {e}")
-<<<<<<< HEAD
-        return 
-=======
         return None
 
 
@@ -155,4 +137,3 @@ def format_forecast_openweather(forecast: dict) -> pd.DataFrame:
         labels=["Morning", "Noon", "Afternoon", "Evening", "Night"],
     )
     return weather_df
->>>>>>> b1efb45c14fb64277eda07bd70ff62a0ad0a775b
