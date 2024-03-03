@@ -16,7 +16,9 @@ from pathlib import Path
 sys.path.append('../')
 
 import json
+import pandas as pd
 from src.methods.data_ingestion import call_api, Request
+from src.helpers.utils import relative_distance
 
 
 # %% --------------------------------------------------------------------------
@@ -49,6 +51,17 @@ def get_auth_token(config: dict) -> str:
     
     return res['access_token']
 
+def format_amadeus_data(res_api: dict, param_lat: float, param_long: float) -> pd.DataFrame:
+    df = pd.DataFrame(res_api['data'], columns=['name','category','geoCode','rank','tags'])
+    df = pd.concat([df.drop(['geoCode'], axis=1),df['geoCode'].apply(pd.Series)], axis=1)
+
+    df['distance'] = df.apply(lambda x: relative_distance(lat1=param_lat, lon1=param_long, lat2=x.latitude, lon2=x.longitude), axis=1)
+
+    df = df[['name','category','latitude','longitude','distance','rank','tags']]
+    df = df.set_index('name')
+
+    return df
+
 def amadeus_pipeline(request_params: dict, isProd: bool = False):
     """
     Pipeline for the Amadeus API - Points of Interest
@@ -71,4 +84,6 @@ def amadeus_pipeline(request_params: dict, isProd: bool = False):
 
     res = call_api(url=url, headers=headers, params=request_params, request=Request.GET)
 
-    return res
+    activities_df = format_amadeus_data(res_api=res, param_lat=request_params['latitude'], param_long=request_params['longitude'])
+
+    return activities_df
