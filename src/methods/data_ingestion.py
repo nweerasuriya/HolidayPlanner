@@ -8,12 +8,13 @@ __date__ = "2023-11-10"
 __authors__ = "NedeeshaWeerasuriya"
 __version__ = "0.1"
 
-
+# Import required libraries
 import numpy as np
 import pandas as pd
 import requests
-from pyproj import Proj, Transformer
+from pyowm import OWM
 
+# Import helper functions
 from src.helpers.time_tracker import track_time
 from src.helpers.utils import is_number
 
@@ -49,7 +50,6 @@ def filter_data_ranges(data: pd.DataFrame, data_range: tuple) -> pd.DataFrame:
     data = data.loc[data.values >= data_range[0]]
     # Filter upper values
     data = data.loc[data.values <= data_range[1]]
-
     return data
 
 
@@ -68,13 +68,50 @@ def call_api(url: str, headers: dict = None, params: dict = None) -> dict:
 
 
 @track_time
-def convert_easting_northing_to_long_lat(easting: int, northing: int) -> tuple:
+def get_openweather(lat: float, lon: float, api_key="3201bd50938164da1d0f66147bde4f78"):
     """
-    Convert easting and northing coordinates to longitude and latitude
+    Get current weather and forecast for a location using OpenWeatherMap API
     """
-    inProj = Proj("epsg:27700")
-    outProj = Proj("epsg:4326")
-    longitude, latitude = Transformer.from_proj(inProj, outProj).transform(
-        easting, northing
+    owm = OWM(api_key)
+    mgr = owm.weather_manager()
+    # Get current weather
+    observation = mgr.weather_at_coords(lat=lat, lon=lon)
+    # Get forecast
+    forecast = mgr.forecast_at_coords(lat=lat, lon=lon, interval="3h")
+    return observation, forecast
+
+
+@track_time
+def format_forecast_openweather(forecast: dict) -> pd.DataFrame:
+    """
+    Format the forecast data from OpenWeatherMap API and return a DataFrame with the relevant information
+    """
+    weather_list = forecast["weathers"]
+    output_dict = {}
+    for weather_dict in weather_list:
+        # convert reference time to datetime
+        weather_dict["reference_time"] = pd.to_datetime(
+            weather_dict["reference_time"], unit="s"
+        )
+        # convert kelvin to celsius
+        temp = int(weather_dict["temperature"]["temp"] - 273.15)
+        output_dict[weather_dict["reference_time"]] = {
+            "temperature (C)": temp,
+            "detailed_status": weather_dict["detailed_status"],
+            "wind (mph)": weather_dict["wind"]["gust"],
+        }
+    # remove timestamps keys before 7am and after 10pm
+    forecast_dict = {
+        k: v for k, v in output_dict.items() if k.hour >= 7 and k.hour <= 22
+    }
+
+    weather_df = pd.DataFrame(forecast_dict).T
+    # Get day of the week as column
+    weather_df["day_of_week"] = weather_df.index.day_name()
+    # Creat grouping in weather dataframe for Morning (9am-12pm), Noon (12pm-3pm), Afternoon (3pm-6pm), Evening (6pm-9pm)
+    weather_df["time_of_day"] = pd.cut(
+        weather_df.index.hour,
+        bins=[6, 9, 12, 15, 18, 21],
+        labels=["Morning", "Noon", "Afternoon", "Evening", "Night"],
     )
-    return longitude, latitude
+    return weather_df

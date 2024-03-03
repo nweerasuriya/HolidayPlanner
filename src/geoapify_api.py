@@ -194,7 +194,6 @@ def add_weather_tags(
     return weather_tag
 
 
-@track_time
 def geoapify_pipeline(url: str, request_params: dict, filters: dict) -> tuple:
     """
     Pipeline for the Geoapify API
