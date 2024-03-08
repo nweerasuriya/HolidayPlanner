@@ -5,7 +5,7 @@ Contains functions to ingest data from a file and format it
 """
 
 __date__ = "2023-11-10"
-__authors__ = "NedeeshaWeerasuriya"
+__authors__ = "NedeeshaWeerasuriya, Sang Nguyen"
 __version__ = "0.1"
 
 # Import required libraries
@@ -14,10 +14,15 @@ import pandas as pd
 import requests
 from pyowm import OWM
 
+from enum import Enum
 # Import helper functions
 from src.helpers.time_tracker import track_time
 from src.helpers.utils import is_number
 
+"""
+Enums
+"""
+Request = Enum('Request', ['GET','POST'])
 
 @track_time
 def format_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -54,12 +59,29 @@ def filter_data_ranges(data: pd.DataFrame, data_range: tuple) -> pd.DataFrame:
 
 
 @track_time
-def call_api(url: str, headers: dict = None, params: dict = None) -> dict:
-    """
-    Call an API and return the response as JSON
+def call_api(url: str, headers: dict = None, params: dict = None, request: Request = Request.GET):
+def call_api(url: str, headers: dict = None, params: dict = None, request: Request = Request.GET) -> dict:
+    Performs a REST API call and returns the response
+
+    Params
+    ------
+    url: str
+        The request url
+    headers: dict
+        A dictionary of request headers
+    params: dict
+        A dictionary of parameters in the request body
+    request: Request
+        The REST method used in the API call, must be a valid item in the Request Enum
     """
     try:
-        response = requests.get(url, headers=headers, params=params)
+        if request == Request.GET:
+            response = requests.get(url, headers=headers, params=params)
+        elif request == Request.POST:
+            response = requests.post(url, headers=headers, data=params)
+        else:
+            raise requests.exceptions.RequestException("Invalid request method")
+
         response.raise_for_status()  # Raise an exception if the request was unsuccessful
         return response.json()  # Return the response data as JSON
     except requests.exceptions.RequestException as e:
