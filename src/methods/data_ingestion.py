@@ -60,7 +60,7 @@ def filter_data_ranges(data: pd.DataFrame, data_range: tuple) -> pd.DataFrame:
 
 @track_time
 def call_api(url: str, headers: dict = None, params: dict = None, request: Request = Request.GET):
-    """
+def call_api(url: str, headers: dict = None, params: dict = None, request: Request = Request.GET) -> dict:
     Performs a REST API call and returns the response
 
     Params
