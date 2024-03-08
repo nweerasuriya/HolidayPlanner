@@ -13,7 +13,8 @@ __version__ = "0.1"
 # -----------------------------------------------------------------------------
 import sys
 from pathlib import Path
-sys.path.append('../')
+
+sys.path.append("../")
 
 import json
 import pandas as pd
@@ -32,10 +33,11 @@ def default_params() -> dict:
         "latitude": "51.484703",
         "longitude": "-0.061048",
         "radius": "5",
-        "categories": "SIGHTS"
+        "categories": "SIGHTS",
     }
 
     return request_params
+
 
 def get_auth_token(auth_url: str, client_id: str, client_secret: str) -> str:
     """
@@ -50,21 +52,24 @@ def get_auth_token(auth_url: str, client_id: str, client_secret: str) -> str:
     client_secret: str
         The Client Secret of the Amadeus API App
     """
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
-    }
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
     request_params = {
         "grant_type": "client_credentials",
         "client_id": client_id,
-        "client_secret": client_secret
+        "client_secret": client_secret,
     }
 
-    res = call_api(url=auth_url, headers=headers, params=request_params, request=Request.POST)
-    
-    return res['access_token']
+    res = call_api(
+        url=auth_url, headers=headers, params=request_params, request=Request.POST
+    )
 
-def format_amadeus_data(res_api: dict, param_lat: float, param_long: float) -> pd.DataFrame:
+    return res["access_token"]
+
+
+def format_amadeus_data(
+    res_api: dict, param_lat: float, param_long: float
+) -> pd.DataFrame:
     """
     Retrieves an authentication token from the Amadeus API
 
@@ -77,17 +82,27 @@ def format_amadeus_data(res_api: dict, param_lat: float, param_long: float) -> p
     param_long: float
         The longitude parameter supplied to the api call
     """
-    df = pd.DataFrame(res_api['data'], columns=['name','category','geoCode','rank','tags'])
-    df = pd.concat([df.drop(['geoCode'], axis=1),df['geoCode'].apply(pd.Series)], axis=1)
+    df = pd.DataFrame(
+        res_api["data"], columns=["name", "category", "geoCode", "rank", "tags"]
+    )
+    df = pd.concat(
+        [df.drop(["geoCode"], axis=1), df["geoCode"].apply(pd.Series)], axis=1
+    )
 
-    df['distance'] = df.apply(lambda x: relative_distance(lat1=param_lat, lon1=param_long, lat2=x.latitude, lon2=x.longitude), axis=1)
+    df["distance"] = df.apply(
+        lambda x: relative_distance(
+            lat1=param_lat, lon1=param_long, lat2=x.latitude, lon2=x.longitude
+        ),
+        axis=1,
+    )
 
-    df = df[['name','category','latitude','longitude','distance','rank','tags']]
-    df = df.set_index('name')
+    df = df[["name", "category", "latitude", "longitude", "distance", "rank", "tags"]]
+    df = df.set_index("name")
 
     return df
 
-def amadeus_pipeline(request_params: dict=default_params(), isProd: bool = False):
+
+def amadeus_pipeline(request_params: dict = default_params(), isProd: bool = False):
     """
     Pipeline for the Amadeus API - Points of Interest
 
@@ -98,24 +113,30 @@ def amadeus_pipeline(request_params: dict=default_params(), isProd: bool = False
     isProd: bool
         A boolean defining if the api call should be to the prod environment
     """
-    env_str = 'prod' if isProd else 'dev'
+    env_str = "prod" if isProd else "dev"
 
     config_path = f"{Path(__file__).resolve().parent}/config.json"
 
-    with open(config_path,"r") as config_file:
-        config = json.load(config_file)['amadeus_api'][env_str]
+    with open(config_path, "r") as config_file:
+        config = json.load(config_file)["amadeus_api"][env_str]
 
-    auth_token = get_auth_token(config['auth_url'], config['client_id'], config['client_secret'])
+    auth_token = get_auth_token(
+        config["auth_url"], config["client_id"], config["client_secret"]
+    )
 
-    url = config['poi_url']
+    url = config["poi_url"]
 
     headers = {
         "Authorization": f"Bearer {auth_token}",
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/x-www-form-urlencoded",
     }
 
     res = call_api(url=url, headers=headers, params=request_params, request=Request.GET)
 
-    activities_df = format_amadeus_data(res_api=res, param_lat=request_params['latitude'], param_long=request_params['longitude'])
+    activities_df = format_amadeus_data(
+        res_api=res,
+        param_lat=request_params["latitude"],
+        param_long=request_params["longitude"],
+    )
 
     return activities_df
