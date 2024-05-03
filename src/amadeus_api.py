@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.append("../")
 
-import json
+import yaml
 import pandas as pd
 from src.methods.data_ingestion import call_api, Request
 from src.helpers.utils import relative_distance
@@ -115,10 +115,10 @@ def amadeus_pipeline(request_params: dict = default_params(), isProd: bool = Fal
     """
     env_str = "prod" if isProd else "dev"
 
-    config_path = f"{Path(__file__).resolve().parent}/config.json"
+    config_path = f"{Path(__file__).resolve().parent}/config.yml"
 
     with open(config_path, "r") as config_file:
-        config = json.load(config_file)["amadeus_api"][env_str]
+        config = yaml.full_load(config_file)["amadeus"][env_str]
 
     auth_token = get_auth_token(
         config["auth_url"], config["client_id"], config["client_secret"]

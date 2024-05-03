@@ -1,0 +1,7 @@
+---
+amadeus:
+  dev:
+    auth_url: https://test.api.amadeus.com/v1/security/oauth2/token
+    poi_url: https://test.api.amadeus.com/v1/reference-data/locations/pois
+    client_id: XXEyhkzG1cZEPQcYfSRNHnv3l85GZhx3
+    client_secret: al3IakaRHKTjKW4d
