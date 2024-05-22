@@ -1,0 +1,116 @@
+"""
+Data Ingestion Script for Tomorrow Weather API
+"""
+
+__date__ = "2024-05-21"
+__author__ = "Saif Widyatmoko"
+__version__ = "0.1"
+
+
+import sys
+from pathlib import Path
+
+sys.path.append("../")
+
+import json
+import datetime as dt
+import pandas as pd
+from src.methods.data_ingestion import call_api, Request
+
+def create_parameters(location:str) -> dict:
+    """
+    Default parameters for the tomorrow API. Main point of editing is only location which could be done via:
+    - City (example: Nottingham)
+    - Postcode (example: NG75RB)
+    """
+    request_params = {"api": "forecast",
+                      "location":location,
+                      "apikey": "f8MrbXgtM9adXViv7lrcONriklABEVaW",
+    }
+    return request_params
+
+
+def create_url(url:str, request_params:dict) -> str:
+    """
+    Create URL for Tomorrow weather API
+    """
+
+    url = url + request_params['api'] + '?location=' + request_params['location'] + '&apikey=' + request_params['apikey']
+    return url
+
+def tomorrow_weather_API(url:str, headers:dict) -> pd.DataFrame:
+    """
+    Calling Tomorrow weather API and putting this into a legible form
+    """
+    data = call_api(url=url,headers=headers)
+    data_df = pd.DataFrame(data['timelines']['hourly'])
+
+    # Normalise data for values and then re-join against initial date
+    data_values = pd.json_normalize(data_df['values'])
+    joined = pd.concat([data_df['time'],data_values],axis=1)
+
+    return joined
+
+def desired_attributes(tomorrow_df:pd.DataFrame) -> pd.DataFrame:
+    """
+    Grabbing the desired columns that we want alongside adding the mapping for the weathercode
+    """
+    wanted_columns = tomorrow_df.loc[:,['time','temperature','precipitationProbability',
+                                     'humidity','rainIntensity','weatherCode',
+                                     'visibility','windSpeed']]
+    # Weather code translation to be appended in
+
+    weather_code_mapping = {
+      0: "Unknown",
+      1000: "Clear, Sunny",
+      1100: "Mostly Clear",
+      1101: "Partly Cloudy",
+      1102: "Mostly Cloudy",
+      1001: "Cloudy",
+      2000: "Fog",
+      2100: "Light Fog",
+      4000: "Drizzle",
+      4001: "Rain",
+      4200: "Light Rain",
+      4201: "Heavy Rain",
+      5000: "Snow",
+      5001: "Flurries",
+      5100: "Light Snow",
+      5101: "Heavy Snow",
+      6000: "Freezing Drizzle",
+      6001: "Freezing Rain",
+      6200: "Light Freezing Rain",
+      6201: "Heavy Freezing Rain",
+      7000: "Ice Pellets",
+      7101: "Heavy Ice Pellets",
+      7102: "Light Ice Pellets",
+      8000: "Thunderstorm"
+      }
+
+    wanted_columns['Code_detail'] = wanted_columns['weatherCode'].map(weather_code_mapping)
+
+    return wanted_columns
+
+def format_forecast_tomorrow(tomorrow_df:pd.DataFrame) -> pd.DataFrame:
+    """
+    Adding date fields such as: time of day, day of week, cast time to date
+    """
+    tomorrow_df['time'] = pd.to_datetime(tomorrow_df['time']).dt.tz_localize(None)
+    tomorrow_df['date'] = tomorrow_df['time'].dt.date
+
+    # Indexing date so we can assign day of week and time of day
+    tomorrow_df = tomorrow_df.set_index('time')
+    tomorrow_df['day_of_week'] = tomorrow_df.index.day_name()
+    # Creating buckets for Morning, Noon, Afternoon, Evening
+    tomorrow_df['time_of_day'] = pd.cut(tomorrow_df.index.hour,
+                                        bins=[6,9,12,15,18,21],
+                                        labels=['Morning','Noon','Afternoon','Evening','Night'],)
+
+    # Organise the ordering of the dataframe
+    tomorrow_df.loc[:,['date','day_of_week','time_of_day','precipitationProbability',
+                       'humidity','rainIntensity','weatherCode','visibility',
+                       'windSpeed','Code_detail']]
+    # Remove undesired hours
+    tomorrow_df = tomorrow_df.dropna()
+
+    return tomorrow_df
