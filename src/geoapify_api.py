@@ -26,7 +26,7 @@ def default_parameters() -> dict:
     Default parameters for the Geoapify API
     """
     request_params = {
-        "apiKey": "493bbfea1f124b27906cf052aa330680",
+        "apiKey": str(input("Enter your API key: ")),
         "categories": "entertainment,tourism, leisure",
         "limit": "500",
     }
